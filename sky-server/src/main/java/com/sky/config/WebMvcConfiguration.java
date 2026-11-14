@@ -20,7 +20,7 @@ import springfox.documentation.spring.web.plugins.Docket;
  */
 @Configuration
 @Slf4j
-public class WebMvcConfiguration extends WebMvcConfigurationSupport {
+public class WebMvcConfiguration extends WebMvcConfigurationSupport {   // Spring MVC 的全局配置类，主要用于定制 Spring MVC 的核心行为
 
     @Autowired
     private JwtTokenAdminInterceptor jwtTokenAdminInterceptor;
@@ -65,4 +65,24 @@ public class WebMvcConfiguration extends WebMvcConfigurationSupport {
         registry.addResourceHandler("/doc.html").addResourceLocations("classpath:/META-INF/resources/");
         registry.addResourceHandler("/webjars/**").addResourceLocations("classpath:/META-INF/resources/webjars/");
     }
+    /*Spring Boot 默认拦截了静态资源，导致在浏览器输入 http://localhost:8080/doc.html 时打不开接口文档页面。这个类把相关资源路径“放行”了*/
 }
+
+/*
+* 【Spring 启动阶段】
+new WebMvcConfiguration()
+   ↓
+注入 JwtTokenAdminInterceptor
+   ↓
+调用 addInterceptors()  -> 把拦截器塞进容器，设置拦截规则
+   ↓
+调用 addResourceHandlers() -> 把静态资源路径塞进容器
+   ↓
+调用 docket() 并生成 Bean -> Knife4j 扫描 Controller，生成文档数据
+
+【请求处理阶段】(以被拦截的请求为例)
+用户发起请求 -> DispatcherServlet -> 匹配 Controller
+   ↓
+进入拦截器 preHandle() -> (成功) -> Controller 方法执行 -> postHandle() -> afterCompletion()
+                       -> (失败) -> 直接返回错误，流程结束*/
+
